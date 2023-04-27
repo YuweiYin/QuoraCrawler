@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 """
-@Author: [Yuwei Yin](https://github.com/YuweiYin)
+@author: [YuweiYin](https://github.com/YuweiYin)
 """
 
 import os
@@ -10,15 +10,10 @@ import time
 import argparse
 import collections
 
-# import requests
-# import urllib.request
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-
 from markdownify import markdownify as md
-# from html2text import html2text
 
 
 class QuoraCrawler:
@@ -153,21 +148,15 @@ class QuoraCrawler:
                 url_visited.add(cur_url)
 
             browser.get(cur_url)
-            # time.sleep(1.0)
             time.sleep(0.5)
 
             # fetch the content of the whole page and parse it using BeautifulSoup
             html_source = browser.page_source
             soup = BeautifulSoup(html_source, "html.parser")
 
-            # q_related_link = soup.find_all(name="a", attrs={"class": "puppeteer_test_link"})
             q_related_link = soup.find_all(attrs={"class": "puppeteer_test_link"})
             q_related_link = [link.attrs["href"] for link in q_related_link]
             q_related_link = [link for link in q_related_link if link[:len_ut] == self.args.url_topic]
-
-            # TODO: get topic following counts
-            # q_topic_following1 = soup.find_all(attrs={"class": "qu-visibility--hidden"})
-            # q_topic_following2 = soup.find_all(attrs={"class": "qu-display--inline-flex"})
 
             for link in q_related_link:
                 if link not in topic_saved:  # add as many as possible into topic_saved
@@ -208,6 +197,8 @@ class QuoraCrawler:
     def crawl_question_links(self):
         """
         Step 3. for each topic, get all question links
+
+        Time Consumption: about 250-300 min for crawling all question links from 1000 topic links
         """
         if self.args.verbose:
             print("FUNCTION: crawl_question_links...")
@@ -224,7 +215,12 @@ class QuoraCrawler:
             topic_list = fp_topic_list.readlines()
             topic_list = [t.strip() for t in topic_list if t[:len_ut] == self.args.url_topic]
 
-        filepath_done_topic_list = os.path.join("./crawler/", "done_topic_list.txt")
+        assert hasattr(self.args, "split_start") and isinstance(self.args.split_start, int)
+        assert hasattr(self.args, "split_end") and isinstance(self.args.split_end, int)
+        ss, se = self.args.split_start, self.args.split_end
+        assert 0 <= ss and (se == -1 or se >= ss)
+
+        filepath_done_topic_list = os.path.join("./crawler/", f"done_topic_list_{ss}_{se}.txt")
         if os.path.isfile(filepath_done_topic_list):
             with open(filepath_done_topic_list, encoding="utf-8", mode="r") as fp_done_topic_list:
                 done_topic_list = fp_done_topic_list.readlines()
@@ -244,10 +240,6 @@ class QuoraCrawler:
 
         topic_list.sort()
         # set the current data_split
-        assert hasattr(self.args, "split_start") and isinstance(self.args.split_start, int)
-        assert hasattr(self.args, "split_end") and isinstance(self.args.split_end, int)
-        ss, se = self.args.split_start, self.args.split_end
-        assert 0 <= ss and (se == -1 or se >= ss)
         if se == -1:
             topic_list = topic_list[ss:]
             print(f"The current interval: topic_list[{ss}:]")
@@ -271,8 +263,6 @@ class QuoraCrawler:
             cur_page = browser.page_source
             prev_page = ""
             while prev_page != cur_page:
-                # time.sleep(0.5)
-                # time.sleep(1.0)
                 time.sleep(2.0)
                 prev_page = cur_page
                 browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -327,6 +317,9 @@ class QuoraCrawler:
         """
         Step 4. for each question, get all expanded answers
         Step 5. postprocessing: unify the data format: "human: question <sep> assistant: answer"
+
+        Time Consumption: about 500 min for crawling all Q/A content from all questions of 50 topics
+        Normally, each topic has roughly 80-90 question links.
         """
         if self.args.verbose:
             print("FUNCTION: crawl_qa_data...")
@@ -337,10 +330,16 @@ class QuoraCrawler:
         len_up = len(self.args.url_profile)
         len_uq = len(self.args.url_quora)
 
+        tqa = "./crawler/topic_qa_data/"
         tql = "./crawler/topic_question_links/"
         topic_list = os.listdir(tql)
 
-        filepath_done_topic_qa_list = os.path.join("./crawler/", "done_topic_qa_list.txt")
+        assert hasattr(self.args, "split_start") and isinstance(self.args.split_start, int)
+        assert hasattr(self.args, "split_end") and isinstance(self.args.split_end, int)
+        ss, se = self.args.split_start, self.args.split_end
+        assert 0 <= ss and (se == -1 or se >= ss)
+
+        filepath_done_topic_qa_list = os.path.join("./crawler/", f"done_topic_qa_list_{ss}_{se}.txt")
         if os.path.isfile(filepath_done_topic_qa_list):
             with open(filepath_done_topic_qa_list, encoding="utf-8", mode="r") as fp_done_topic_qa_list:
                 done_topic_qa_list = fp_done_topic_qa_list.readlines()
@@ -365,17 +364,12 @@ class QuoraCrawler:
         browser = webdriver.Chrome(options=options)
 
         url_counter = 0
-        restart_browser_gap = 100
+        restart_browser_gap = 30
         print_done_q_gap = 10
-        # MAX_Scroll = 100
-        MAX_Scroll = 50
+        MAX_Scroll = 30
 
         topic_list.sort()
         # set the current data_split
-        assert hasattr(self.args, "split_start") and isinstance(self.args.split_start, int)
-        assert hasattr(self.args, "split_end") and isinstance(self.args.split_end, int)
-        ss, se = self.args.split_start, self.args.split_end
-        assert 0 <= ss and (se == -1 or se >= ss)
         if se == -1:
             topic_list = topic_list[ss:]
             print(f"The current interval: topic_list[{ss}:]")
@@ -414,22 +408,16 @@ class QuoraCrawler:
                 print(f"List length unequal: {topic_name}; \t profile {len(profile_list)} != q_link {len(q_link_list)}")
                 continue
 
-            save_fp_raw_html = self.create_file(os.path.join(cur_dir, "qa_data_list_raw_html.txt"))
-            save_fp_markdown = self.create_file(os.path.join(cur_dir, "qa_data_list_markdown.txt"))
-            save_fp_pure_text = self.create_file(os.path.join(cur_dir, "qa_data_list_pure_text.txt"))
-            save_fp_to_train = self.create_file(os.path.join(cur_dir, "qa_data_list_to_train.txt"))
+            save_dir = os.path.join(tqa, topic_name)
+            os.makedirs(save_dir, exist_ok=True)
 
             total_questions = len(q_link_list)
             q_idx = 0
             for profile_link, q_link in zip(profile_list, q_link_list):
-                # q_link = "https://www.quora.com/topic/C++-Programming-Advice-1"  # for testing
                 browser.get(q_link)
-                # time.sleep(0.5)
                 time.sleep(1.0)
                 q_idx += 1
                 url_counter += 1
-
-                # TODO: store/clear related questions
 
                 # simulate scrolling until nothing changes
                 cur_page = browser.page_source
@@ -455,8 +443,6 @@ class QuoraCrawler:
                 elements += browser.find_elements(By.CLASS_NAME, "qt_read_more")
                 elements = list(set(elements))
                 for element in elements:
-                    # time.sleep(0.3)
-                    # time.sleep(0.1)
                     browser.execute_script("arguments[0].click();", element)
 
                 # fetch contents of the whole page
@@ -469,17 +455,12 @@ class QuoraCrawler:
                 q_question_raw_html = [str(question).strip() for question in q_question]
                 q_answer_raw_html = [str(answer).strip() for answer in q_answer]
 
-                # q_question_html2text = [html2text(question).strip() for question in q_question_raw_html]
-                # q_answer_html2text = [html2text(answer).strip() for answer in q_answer_raw_html]
-
                 q_question_markdown = [md(question).strip().replace("\n", "<br>") for question in q_question_raw_html]
                 q_answer_markdown = [md(answer).strip().replace("\n", "<br>") for answer in q_answer_raw_html]
 
-                # q_question_markdown_2 = [md(question).strip() for question in q_question_html2text]
-                # q_answer_markdown_2 = [md(answer).strip() for answer in q_question_html2text]
-
                 if len(q_question_markdown) > 0 and len(q_answer_markdown) > 0:
                     cur_question = q_question_markdown[0]
+                    save_fp_to_train = self.create_file(os.path.join(save_dir, "qa_data_list_to_train.txt"))
                     with open(save_fp_to_train, encoding="utf-8", mode="a+") as fp:
                         # human: question <sep> assistant: answer
                         fp.writelines(["human: " + cur_question + " <sep> assistant: " + ans + "\n"
@@ -491,18 +472,21 @@ class QuoraCrawler:
 
                     if len(q_question_text) > 0 and len(q_answer_text) > 0:
                         cur_question = q_question_text[0]
+                        save_fp_pure_text = self.create_file(os.path.join(save_dir, "qa_data_list_pure_text.txt"))
                         with open(save_fp_pure_text, encoding="utf-8", mode="a+") as fp:
                             fp.writelines([topic_name + "\t" + profile_link[len_up:] + "\t" + q_link + "\t" +
                                            cur_question + "\t" + ans + "\n" for ans in q_answer_text])
 
                     if len(q_question_raw_html) > 0 and len(q_answer_raw_html) > 0:
                         cur_question = q_question_raw_html[0]
+                        save_fp_raw_html = self.create_file(os.path.join(save_dir, "qa_data_list_raw_html.txt"))
                         with open(save_fp_raw_html, encoding="utf-8", mode="a+") as fp:
                             fp.writelines([topic_name + "\t" + profile_link[len_up:] + "\t" + q_link + "\t" +
                                            cur_question + "\t" + ans + "\n" for ans in q_answer_raw_html])
 
                     if len(q_question_markdown) > 0 and len(q_answer_markdown) > 0:
                         cur_question = q_question_markdown[0]
+                        save_fp_markdown = self.create_file(os.path.join(save_dir, "qa_data_list_markdown.txt"))
                         with open(save_fp_markdown, encoding="utf-8", mode="a+") as fp:
                             fp.writelines([topic_name + "\t" + profile_link[len_up:] + "\t" + q_link + "\t" +
                                            cur_question + "\t" + ans + "\n" for ans in q_answer_markdown])
