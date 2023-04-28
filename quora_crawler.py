@@ -7,6 +7,7 @@
 import os
 import sys
 import time
+import logging
 import argparse
 import collections
 
@@ -46,7 +47,7 @@ class QuoraCrawler:
         Step 1. set a list of topics, start from https://www.quora.com/topic/xxx
         """
         if self.args.verbose:
-            print("FUNCTION: set_seed_topic_list...")
+            logger.info("FUNCTION: set_seed_topic_list...")
 
         seed_topic_list = [
             "Mathematics", "Physics", "Calculus", "Philosophy", "Algebra", "Thinking", "Prophecies",
@@ -65,7 +66,7 @@ class QuoraCrawler:
             "Statistics-academic-discipline", "Probability-statistics-1", "Linguistics",
             "The-United-States-of-America", "China", "Japan", "Canada",
         ]  # 74 seed topics
-        print(f"len(seed_topic_list): {len(seed_topic_list)}")
+        logger.info(f"len(seed_topic_list): {len(seed_topic_list)}")
 
         with open(self.args.seed_topic_list_filepath, encoding="utf-8", mode="w") as fp_seed_topic_list:
             fp_seed_topic_list.writelines([self.args.url_topic + st + "\n" for st in seed_topic_list])
@@ -75,7 +76,7 @@ class QuoraCrawler:
         Step 2. get as many topic links as possible
         """
         if self.args.verbose:
-            print("FUNCTION: crawl_topic_links...")
+            logger.info("FUNCTION: crawl_topic_links...")
 
         len_ut = len(self.args.url_topic)
         assert os.path.isfile(self.args.seed_topic_list_filepath), \
@@ -90,7 +91,7 @@ class QuoraCrawler:
                 topic_list_visited = [tv.strip() for tv in topic_list_visited if tv[:len_ut] == self.args.url_topic]
         else:
             command = f"touch {self.args.topic_list_visited_filepath}"
-            print(f"command: {command}")
+            logger.info(f"command: {command}")
             os.system(command)
             topic_list_visited = []
 
@@ -100,17 +101,17 @@ class QuoraCrawler:
                 topic_list_to_visit = [t.strip() for t in topic_list_to_visit if t[:len_ut] == self.args.url_topic]
         else:
             command = f"touch {self.args.topic_list_to_visit_filepath}"
-            print(f"command: {command}")
+            logger.info(f"command: {command}")
             os.system(command)
             topic_list_to_visit = []
 
         if len(topic_list_to_visit) > 0:  # resume crawling
-            print(">>> resume crawling")
+            logger.info(">>> resume crawling")
             url_queue = topic_list_to_visit
             url_queue = collections.deque(url_queue)  # BFS to-be-visited node queue
             url_visited = set(topic_list_visited)  # BFS visited node set
         else:  # start crawling from the hard-coded seed topics
-            print(">>> start crawling from the hard-coded seed topics")
+            logger.info(">>> start crawling from the hard-coded seed topics")
             url_queue = seed_topic_list
             url_queue = collections.deque(url_queue)  # BFS to-be-visited node queue
             url_visited = set()  # BFS visited node set
@@ -121,12 +122,12 @@ class QuoraCrawler:
                 topic_list = [t.strip() for t in topic_list if t[:len_ut] == self.args.url_topic]
         else:
             command = f"touch {self.args.topic_list_filepath}"
-            print(f"command: {command}")
+            logger.info(f"command: {command}")
             os.system(command)
             topic_list = []
         topic_saved = set(topic_list)  # saved urls
         topic_saved_cnt = len(topic_saved)
-        print(f"init topic_saved_cnt: {topic_saved_cnt}")
+        logger.info(f"init topic_saved_cnt: {topic_saved_cnt}")
 
         # open the browser
         options = webdriver.ChromeOptions()
@@ -167,8 +168,8 @@ class QuoraCrawler:
             cur_loop += 1
             if cur_loop % write_gap == 0:
                 # rewrite BFS files
-                print(f">>> Rewrite BFS files: \t len(url_visited): {len(url_visited)}; "
-                      f"\t len(url_queue): {len(url_queue)}; \t len(topic_saved): {len(topic_saved)}")
+                logger.info(f">>> Rewrite BFS files: \t len(url_visited): {len(url_visited)}; "
+                            f"\t len(url_queue): {len(url_queue)}; \t len(topic_saved): {len(topic_saved)}")
                 with open(self.args.topic_list_visited_filepath, encoding="utf-8", mode="w") as fp_topic_list_visited:
                     url_visited_write = list(url_visited)
                     url_visited_write.sort()
@@ -191,8 +192,8 @@ class QuoraCrawler:
                 browser = webdriver.Chrome(options=options)
                 time.sleep(1.0)
 
-        print(f">>> *** End ***: \t len(url_visited): {len(url_visited)}; "
-              f"\t len(url_queue): {len(url_queue)}; \t len(topic_saved): {len(topic_saved)}")
+        logger.info(f">>> *** End ***: \t len(url_visited): {len(url_visited)}; "
+                    f"\t len(url_queue): {len(url_queue)}; \t len(topic_saved): {len(topic_saved)}")
 
     def crawl_question_links(self):
         """
@@ -201,7 +202,7 @@ class QuoraCrawler:
         Time Consumption: about 250-300 min for crawling all question links from 1000 topic links
         """
         if self.args.verbose:
-            print("FUNCTION: crawl_question_links...")
+            logger.info("FUNCTION: crawl_question_links...")
 
         timer_start = time.time()
 
@@ -227,7 +228,7 @@ class QuoraCrawler:
                 done_topic_list = [t.strip() for t in done_topic_list if t[:len_ut] == self.args.url_topic]
         else:
             command = f"touch {filepath_done_topic_list}"
-            print(f"command: {command}")
+            logger.info(f"command: {command}")
             os.system(command)
             done_topic_list = []
         done_topic_set = set(done_topic_list)
@@ -242,10 +243,10 @@ class QuoraCrawler:
         # set the current data_split
         if se == -1:
             topic_list = topic_list[ss:]
-            print(f"The current interval: topic_list[{ss}:]")
+            logger.info(f"The current interval: topic_list[{ss}:]")
         else:
             topic_list = topic_list[ss: (se + 1)]
-            print(f"The current interval: topic_list[{ss}: {se + 1}]")
+            logger.info(f"The current interval: topic_list[{ss}: {se + 1}]")
 
         restart_browser_gap = 100
         total_topics = len(topic_list)
@@ -301,9 +302,9 @@ class QuoraCrawler:
             done_topic_list = list(done_topic_set)
             done_topic_list.sort()
             timer_run = time.time() - timer_start
-            print(f">>> [{idx}/{total_topics}]; \t #Done_Topics: {len(done_topic_list)};"
-                  f"\t Cur Topic: {topic_name}; \t #Question of Cur Topic: {len(q_link_list)}; \t " +
-                  "Cur Running Time: %.1f sec (%.1f min)" % (timer_run, timer_run / 60))
+            logger.info(f">>> [{idx}/{total_topics}]; \t #Done_Topics: {len(done_topic_list)};"
+                        f"\t Cur Topic: {topic_name}; \t #Question of Cur Topic: {len(q_link_list)}; \t " +
+                        "Cur Running Time: %.1f sec (%.1f min)" % (timer_run, timer_run / 60))
             with open(filepath_done_topic_list, encoding="utf-8", mode="w") as fp_done_topic_list:
                 fp_done_topic_list.writelines([done_topic + "\n" for done_topic in done_topic_list])
 
@@ -322,7 +323,7 @@ class QuoraCrawler:
         Normally, each topic has roughly 80-90 question links.
         """
         if self.args.verbose:
-            print("FUNCTION: crawl_qa_data...")
+            logger.info("FUNCTION: crawl_qa_data...")
 
         timer_start = time.time()
 
@@ -346,7 +347,7 @@ class QuoraCrawler:
                 done_topic_qa_list = [t.strip() for t in done_topic_qa_list if t[:len_ut] == self.args.url_topic]
         else:
             command = f"touch {filepath_done_topic_qa_list}"
-            print(f"command: {command}")
+            logger.info(f"command: {command}")
             os.system(command)
             done_topic_qa_list = []
         done_topic_qa_set = set(done_topic_qa_list)
@@ -372,10 +373,10 @@ class QuoraCrawler:
         # set the current data_split
         if se == -1:
             topic_list = topic_list[ss:]
-            print(f"The current interval: topic_list[{ss}:]")
+            logger.info(f"The current interval: topic_list[{ss}:]")
         else:
             topic_list = topic_list[ss: (se + 1)]
-            print(f"The current interval: topic_list[{ss}: {se + 1}]")
+            logger.info(f"The current interval: topic_list[{ss}: {se + 1}]")
 
         topic_name_list = topic_list[:]
         topic_list = [self.args.url_topic + t for t in topic_list]
@@ -384,18 +385,18 @@ class QuoraCrawler:
             if cur_topic_url in done_topic_qa_set:
                 continue
             if cur_topic_url in skip_topic_set:
-                print(f">>> skip topic: {cur_topic_url}")
+                logger.info(f">>> skip topic: {cur_topic_url}")
                 continue
 
             topic_name = topic_name_list[topic_idx]
             # cur_question_links = []
-            print(f">>> *** Start Topic [{topic_idx}/{total_topics}]; \t Cur Topic: {topic_name}")
+            logger.info(f">>> *** Start Topic [{topic_idx}/{total_topics}]; \t Cur Topic: {topic_name}")
 
             cur_dir = os.path.join(tql, topic_name)
             profile_list_filepath = os.path.join(cur_dir, "profile_list.txt")
             q_link_list_filepath = os.path.join(cur_dir, "q_link_list.txt")
             if not os.path.exists(profile_list_filepath) or not os.path.exists(q_link_list_filepath):
-                print(f">>> Skip Topic {topic_name} (not exists profile or q_link)")
+                logger.info(f">>> Skip Topic {topic_name} (not exists profile or q_link)")
                 continue
 
             with open(profile_list_filepath, encoding="utf-8", mode="r") as fp:
@@ -406,7 +407,7 @@ class QuoraCrawler:
                 q_link_list = [q.strip() for q in q_link_list if q[:len_uq] == self.args.url_quora]
 
             if len(profile_list) != len(q_link_list):
-                print(f"List length unequal: {topic_name}; \t profile {len(profile_list)} != q_link {len(q_link_list)}")
+                logger.info(f"Skip {topic_name}: len(profile) {len(profile_list)} != len(q_link) {len(q_link_list)}")
                 continue
 
             save_dir = os.path.join(tqa, topic_name)
@@ -494,9 +495,9 @@ class QuoraCrawler:
 
                 if q_idx % print_done_q_gap == 0:
                     timer_run = time.time() - timer_start
-                    print(f">>> Topic [{topic_idx}/{total_topics}] \t >>> Question [{q_idx}/{total_questions}]; "
-                          f"\t Cur Topic: {topic_name}; \t " + "Cur Running Time: %.1f sec (%.1f min)" %
-                          (timer_run, timer_run / 60))
+                    logger.info(f">>> Topic [{topic_idx}/{total_topics}] \t >>> Question [{q_idx}/{total_questions}]; "
+                                f"\t Cur Topic: {topic_name}; \t " + "Cur Running Time: %.1f sec (%.1f min)" %
+                                (timer_run, timer_run / 60))
 
                 # restart the browser to avoid TimeOutError
                 if url_counter % restart_browser_gap == 0:
@@ -509,9 +510,9 @@ class QuoraCrawler:
             done_topic_qa_list = list(done_topic_qa_set)
             done_topic_qa_list.sort()
             timer_run = time.time() - timer_start
-            print(f">>> Topic [{topic_idx}/{total_topics}]; \t #Done_Topics: {len(done_topic_qa_list)};"
-                  f"\t Cur Topic: {topic_name}; \t #Question of Cur Topic: {len(q_link_list)}; \t " +
-                  "Cur Running Time: %.1f sec (%.1f min)" % (timer_run, timer_run / 60))
+            logger.info(f">>> Topic [{topic_idx}/{total_topics}]; \t #Done_Topics: {len(done_topic_qa_list)};"
+                        f"\t Cur Topic: {topic_name}; \t #Question of Cur Topic: {len(q_link_list)}; \t " +
+                        "Cur Running Time: %.1f sec (%.1f min)" % (timer_run, timer_run / 60))
             with open(filepath_done_topic_qa_list, encoding="utf-8", mode="w") as fp_done_topic_qa_list:
                 fp_done_topic_qa_list.writelines([done_tqa + "\n" for done_tqa in done_topic_qa_list])
 
@@ -566,7 +567,7 @@ def run_crawl():
                         help="topic_list_filepath")
 
     args = parser.parse_args()
-    print(args)
+    logger.info(args)
 
     os.environ["webdriver.chrome.driver"] = args.chromedriver
 
@@ -574,10 +575,16 @@ def run_crawl():
     qc.run_crawl()
 
     end = time.time()
-    print("Total Running Time: %.1f sec (%.1f min)" % (end - start, (end - start) / 60))
+    logger.info("Total Running Time: %.1f sec (%.1f min)" % (end - start, (end - start) / 60))
 
     return 0
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        format="[%(asctime)s - %(levelname)s - %(name)s] -   %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S", level=logging.INFO
+    )
+    logger = logging.getLogger(__name__)
+
     sys.exit(run_crawl())
