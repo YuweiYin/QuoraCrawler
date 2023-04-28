@@ -395,6 +395,7 @@ class QuoraCrawler:
             profile_list_filepath = os.path.join(cur_dir, "profile_list.txt")
             q_link_list_filepath = os.path.join(cur_dir, "q_link_list.txt")
             if not os.path.exists(profile_list_filepath) or not os.path.exists(q_link_list_filepath):
+                print(f">>> Skip Topic {topic_name} (not exists profile or q_link)")
                 continue
 
             with open(profile_list_filepath, encoding="utf-8", mode="r") as fp:

@@ -14,6 +14,10 @@ conda activate qc
 pip install -r requirements.txt
 ```
 
+---
+
+**Note**: You can skip Step 1-3 by rename the folder `crawler_example` as `crawler`, download `topic_question_links.zip` from [Google Drive](https://drive.google.com/drive/folders/1A5bQdNwSVXlJNHWnC4StDQ9dJF2kCXJu?usp=sharing), put it into the `crawler/` folder, and unzip it. After that, you can run scripts in Step 4 to crawl Quora question/answer pairs.
+
 ## Step 1
 
 - Set a list of topics, start from https://www.quora.com/topic/xxx
@@ -61,6 +65,7 @@ python quora_crawler.py --verbose --task crawl_qa_data --save_all
 
 ```bash
 # You can stop and resume running the process at any time.
+python quora_crawler.py --verbose --task crawl_question_links --split_start 0 --split_end 10000
 python quora_crawler.py --verbose --task crawl_qa_data --split_start 1000 --split_end 2000
 ```
 
