@@ -4,6 +4,8 @@ QuoraCrawler using selenium, BeautifulSoup, and markdownify
 
 ## Environment
 
+### Python
+
 ```bash
 git clone https://github.com/YuweiYin/QuoraCrawler
 cd QuoraCrawler
@@ -12,6 +14,18 @@ conda create -n qc python=3.9
 conda activate qc
 
 pip install -r requirements.txt
+```
+
+OR
+
+```bash
+bash set_env_python.sh
+```
+
+### Chrome for Linux (Ubuntu)
+
+```bash
+bash set_env_chrome.sh
 ```
 
 ---
@@ -70,3 +84,25 @@ python quora_crawler.py --verbose --task crawl_qa_data --split_start 1000 --spli
 ```
 
 ---
+
+# RedditCrawler
+
+```bash
+git clone https://github.com/microsoft/DialoGPT
+cd DialoGPT
+
+# modify LSP-linux.yml beforehand if some packages are not compatible
+conda env create -f LSP-linux.yml -n LSP
+conda activate LSP
+pip install -r requirements.txt
+
+git clone https://github.com/NVIDIA/apex
+cd apex
+git reset --hard 3d01e4a0a188cc8df54bc6e44cf5eb40ff6b4cc5
+pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" .
+
+cd ..
+python demo.py --data full
+
+python reddit_format.py --verbose
+```
