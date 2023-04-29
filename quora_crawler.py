@@ -23,6 +23,14 @@ class QuoraCrawler:
         self.args = args
         os.makedirs(args.save_root_dir, exist_ok=True)
 
+        options = webdriver.ChromeOptions()
+        options.binary_location = self.args.chrome_filepath
+        options.add_argument("--window-size=1920,1080")
+        options.add_argument("--headless")  # do not use the headless mode when debugging
+        options.add_argument("--disable-gpu")
+        options.add_experimental_option("extensionLoadTimeout", 60000)
+        self.chrome_options = options
+
     def __str__(self):
         return self.__class__.__name__
 
@@ -130,10 +138,7 @@ class QuoraCrawler:
         logger.info(f"init topic_saved_cnt: {topic_saved_cnt}")
 
         # open the browser
-        options = webdriver.ChromeOptions()
-        options.binary_location = self.args.chrome_filepath
-        options.add_experimental_option("extensionLoadTimeout", 60000)
-        browser = webdriver.Chrome(options=options)
+        browser = webdriver.Chrome(options=self.chrome_options)
 
         # BFS, visit all seed topics and their related topics
         cur_loop = 0
@@ -189,7 +194,7 @@ class QuoraCrawler:
                 # restart the browser to avoid TimeOutError
                 browser.quit()
                 time.sleep(1.0)
-                browser = webdriver.Chrome(options=options)
+                browser = webdriver.Chrome(options=self.chrome_options)
                 time.sleep(1.0)
 
         logger.info(f">>> *** End ***: \t len(url_visited): {len(url_visited)}; "
@@ -234,10 +239,7 @@ class QuoraCrawler:
         done_topic_set = set(done_topic_list)
 
         # open the browser
-        options = webdriver.ChromeOptions()
-        options.binary_location = self.args.chrome_filepath
-        options.add_experimental_option("extensionLoadTimeout", 60000)
-        browser = webdriver.Chrome(options=options)
+        browser = webdriver.Chrome(options=self.chrome_options)
 
         topic_list.sort()
         # set the current data_split
@@ -311,7 +313,7 @@ class QuoraCrawler:
             if idx % restart_browser_gap == 1:  # restart the browser to avoid TimeOutError
                 browser.quit()
                 time.sleep(1.0)
-                browser = webdriver.Chrome(options=options)
+                browser = webdriver.Chrome(options=self.chrome_options)
                 time.sleep(1.0)
 
     def crawl_qa_data(self):
@@ -359,10 +361,7 @@ class QuoraCrawler:
         skip_topic_set = set(skip_topic_list)
 
         # open the browser
-        options = webdriver.ChromeOptions()
-        options.binary_location = self.args.chrome_filepath
-        options.add_experimental_option("extensionLoadTimeout", 60000)
-        browser = webdriver.Chrome(options=options)
+        browser = webdriver.Chrome(options=self.chrome_options)
 
         url_counter = 0
         restart_browser_gap = 30
@@ -503,7 +502,7 @@ class QuoraCrawler:
                 if url_counter % restart_browser_gap == 0:
                     browser.quit()
                     time.sleep(1.0)
-                    browser = webdriver.Chrome(options=options)
+                    browser = webdriver.Chrome(options=self.chrome_options)
                     time.sleep(1.0)
 
             done_topic_qa_set.add(cur_topic_url)
@@ -551,9 +550,12 @@ def run_crawl():
 
     parser.add_argument("--chromedriver", type=str, default="chromedriver",
                         help="chromedriver")
+    # parser.add_argument("--chrome_filepath", type=str,
+    #                     default="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",  # MacOS
+    #                     help="chrome_filepath of MacOS")
     parser.add_argument("--chrome_filepath", type=str,
-                        default="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-                        help="chrome_filepath of MacOS")
+                        default="/usr/bin/google-chrome",  # Linux (or "/opt/google/chrome/google-chrome")
+                        help="chrome_filepath of Linux")
 
     parser.add_argument("--save_root_dir", type=str, default="./crawler/",
                         help="save_root_dir")

@@ -10,8 +10,8 @@ echo "LOG_DIR: ${LOG_DIR}"
 #conda activate qc
 #pip install -r requirements.txt
 
-CHROME_FP="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"  # MacOS
-#CHROME_FP="/usr/bin/google-chrome"  # Linux (or "/opt/google/chrome/google-chrome")
+#CHROME_FP="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"  # MacOS
+CHROME_FP="/usr/bin/google-chrome"  # Linux (or "/opt/google/chrome/google-chrome")
 
 nohup python quora_crawler.py --verbose --chrome_filepath "${CHROME_FP}" --task "crawl_qa_data" --split_start 30001 --split_end 30500 > "${LOG_DIR}/30001_30500.log" 2>&1 &
 nohup python quora_crawler.py --verbose --chrome_filepath "${CHROME_FP}" --task "crawl_qa_data" --split_start 30501 --split_end 31000 > "${LOG_DIR}/30501_31000.log" 2>&1 &

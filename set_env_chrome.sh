@@ -3,6 +3,8 @@
 echo "Set Chrome environment..."
 echo -e "\n\n\n"
 
+# Linux Ubuntu
+
 sudo apt update
 sudo apt upgrade
 
