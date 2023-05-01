@@ -551,10 +551,10 @@ def run_crawl():
     parser.add_argument("--chromedriver", type=str, default="chromedriver",
                         help="chromedriver")
     # parser.add_argument("--chrome_filepath", type=str,
-    #                     default="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",  # MacOS
+    #                     default="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     #                     help="chrome_filepath of MacOS")
     parser.add_argument("--chrome_filepath", type=str,
-                        default="/usr/bin/google-chrome",  # Linux (or "/opt/google/chrome/google-chrome")
+                        default="/usr/bin/google-chrome",  # "/opt/google/chrome/google-chrome"
                         help="chrome_filepath of Linux")
 
     parser.add_argument("--save_root_dir", type=str, default="./crawler/",
